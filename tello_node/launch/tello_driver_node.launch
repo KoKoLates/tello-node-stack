@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen"></node>
+    <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" respawn="false" output="screen">
+    </node>
+</launch>
