@@ -2,7 +2,6 @@
 
 import threading
 
-from numpy import empty
 import rospy
 import sys, select, termios, tty
 
@@ -15,12 +14,10 @@ move_bindings = {
     'a':( 0, 0, 0,-1),  # Yaw Left
     'd':( 0, 0, 0, 1),  # Yaw Right
 
-    'i':( 0, 1, 0, 0),  # Front
-    'k':( 0,-1, 0, 0),  # Back
-    'j':(-1, 0, 0, 0),  # Left
-    'l':( 1, 0, 0, 0),  # Right
-
-    'c':( 0, 0, 0, 0),  # Stop
+    'i':( 1, 0, 0, 0),  # Front
+    'k':(-1, 0, 0, 0),  # Back
+    'j':( 0,-1, 0, 0),  # Left
+    'l':( 0, 1, 0, 0),  # Right
 }
 
 trigger_bindings = {
@@ -64,11 +61,6 @@ class Publish_Threading(threading.Thread):
         self.condition.notify() # Notify publish thread that a new message obtained
         self.condition.release()
 
-    def stop(self) -> None:
-        self.flag = True
-        self.update(0.0, 0.0, 0.0, 0.0)
-        self.join()
-
     def run(self) -> None:
         twist = Twist()
         while not self.flag:
@@ -91,6 +83,11 @@ class Publish_Threading(threading.Thread):
         twist.linear.x, twist.linear.y, twist.linear.z = 0, 0, 0
         twist.angular.x, twist.angular.y, twist.angular.z = 0, 0, 0
 
+    def stop(self) -> None:
+        self.flag = True
+        self.update(0.0, 0.0, 0.0, 0.0)
+        self.join()
+
 def getKey(settings:list, timeout) -> str:
     tty.setraw(sys.stdin.fileno())
     rlist, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -100,7 +97,8 @@ def getKey(settings:list, timeout) -> str:
         key = ''
     
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-    return key
+    return key    
+
 
 if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
@@ -116,9 +114,10 @@ if __name__ == "__main__":
         timeout = None
 
     publisher_thread = Publish_Threading(repeat)
-    x, y, z, theta, status = 0, 0, 0, 0, 0
+    x, y, z, theta = 0, 0, 0, 0
 
     try:
+        
         publisher_thread.wait_for_subscriber()
         publisher_thread.update(x, y, z, theta)
         while True:
@@ -154,6 +153,7 @@ if __name__ == "__main__":
                     break
             
             publisher_thread.update(x, y, z, theta)
+            rospy.loginfo('x:{} y:{} z:{} theta:{}'.format(x, y, z, theta))
     
     except Exception as exception:
         rospy.logerr(exception)
