@@ -1,0 +1,17 @@
+# Byte-compilede / optimized / DLL files 
+__pycache__/
+
+# C extension
+*.so
+
+# Distribution / Packaging
+bin/
+build/
+develop-eggs/
+dist/
+lib/
+lib64/
+
+# Install logs
+pip-log.txt
+pip-delete-this-directory.txt
