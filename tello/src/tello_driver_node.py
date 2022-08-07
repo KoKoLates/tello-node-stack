@@ -10,17 +10,23 @@ import numpy as np
 from tellopy._internal import tello, error, logger
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Empty
-from sensor_msgs.msg import Image
+from std_msgs.msg import Empty, UInt8, Bool, UInt8MultiArray
+from sensor_msgs.msg import Image, CompressedImage, Imu, CameraInfo
+from nav_msgs.msg import Odometry
 
 class Tello_Node(tello.Tello):
     def __init__(self) -> None:
         super(Tello_Node, self).__init__(port=9000)
         
         self.cv_bridge = CvBridge()
+        # Parameter server
+        self.h264_encoded_stream = bool(rospy.get_param('~h264_encoded_stream', False))
 
         # Publisher for image signal
-        self.image_publisher = rospy.Publisher('image_raw', Image, queue_size=1)
+        if self.h264_encoded_stream:
+            self.image_publisher_h264 = rospy.Publisher('image_h264', CompressedImage, queue_size=1)
+        else:
+            self.image_publisher_raw = rospy.Publisher('image_raw', Image, queue_size=1)
 
         # Subscriber for control signal
         rospy.Subscriber('take_off', Empty, self.take_off_callback, queue_size=1)
