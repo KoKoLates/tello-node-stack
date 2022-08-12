@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(tello)
+project(tello_node)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -13,18 +13,25 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  message_generation
+)
+
+add_message_files(
+  FILES
+  tello_status.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs 
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES tello_node
- CATKIN_DEPENDS cv_bridge geometry_msgs rospy sensor_msgs std_msgs
+ CATKIN_DEPENDS cv_bridge geometry_msgs rospy sensor_msgs std_msgs message_runtime
 #  DEPENDS system_lib
 )
-
-###########
-## Build ##
-###########
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

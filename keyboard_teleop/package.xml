@@ -4,7 +4,7 @@
   <version>0.0.0</version>
   <description>The keyboard_teleop package</description>
 
-  <maintainer email="the21515@gmail.com">koko</maintainer>
+  <maintainer email="koko@todo.todo">koko</maintainer>
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>

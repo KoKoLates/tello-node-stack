@@ -1,8 +1,0 @@
-# opencv-python
-# opencv-contrib-python
-numpy
-av
-tellopy
-
-# pynput
-# smach
