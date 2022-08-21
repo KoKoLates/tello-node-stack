@@ -15,3 +15,5 @@ pip install tellopy
 pip install smach
 
 # import sys, select, termios, tty for keyboard twist 
+
+sudo apt install ros-noetic-codec-image-transport
