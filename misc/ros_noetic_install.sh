@@ -12,10 +12,10 @@ echo "[INFO] The Ubuntu version is [Ubuntu $version]."
 # If the version is not Focal, then quit the process
 case $version in 
 	"focal" )
-		;;
+	;;
 	*)
-		echo "[ERROR] The ROS Noetic is primarily targeted at Ubuntu Focal (20.04)."
-		exit 0
+    echo "[ERROR] The ROS Noetic is primarily targeted at Ubuntu Focal (20.04)."
+    exit 0
 esac
 
 # Setup the ROS package list to source.list
@@ -39,10 +39,10 @@ ret=$(curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | s
 # Checking the return values
 case $ret in
 	"OK" )
-		;;
+    ;;
 	*)
-		echo "[ERROR] Unable to add the ROS keys."
-		exit 0
+    echo "[ERROR] Unable to add the ROS keys."
+	exit 0
 esac
 echo "[INFO] Keys Adding Done."
 
@@ -57,17 +57,17 @@ read -p "[Entering] Installation Type (Default to be 1): " ans
 
 case "$ans" in 
 	1)
-		pkg_type="desktop-full"
-		;;
+	pkg_type="desktop-full"
+	;;
 	2)
-		pkg_type="desktop"
-		;;
+	pkg_type="desktop"
+	;;
 	3)
-		pkg_type="ros-base"
-		;;
+	pkg_type="ros-base"
+	;;
 	*)
-		pkg_type="desktop-full"
-		;;
+	pkg_type="desktop-full"
+	;;
 esac
 echo "[INFO] Starting Install ROS Noetic $ans ..."
 
