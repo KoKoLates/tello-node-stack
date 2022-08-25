@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>tello_node</name>
-  <version>0.0.0</version>
-  <description>The tello package</description>
+  <version>0.1.0</version>
+  <description>This is the package that using for DJI Tello in the ROS interface with TelloPy library.</description>
 
-
-  <maintainer email="the21515@gmail.com">koko</maintainer>
-  <license>TODO</license>
+  <maintainer email="the21515@gmail.com">KoKo</maintainer>
+  <license>Apache2</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>cv_bridge</build_depend>

@@ -1,5 +1,21 @@
 <launch>
-    <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen"></node>
-    <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" respawn="false" output="screen">
-    </node>
+    <arg name="namespace" default="tello" />
+    <arg name="tello_ip" default="192.168.10.1" />
+    <arg name="tello_cmd_server_port" default="8889" />
+    <arg name="local_cmd_client_port" default="8890" />
+    <arg name="local_vid_server_port" default="6038" />
+
+    <group ns="$(arg namespace)">
+        <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen">
+            <param name="tello_ip" value="$(arg tello_ip)" />
+            <param name="tello_cmd_server_port" value="$(arg tello_cmd_server_port)" />
+            <param name="local_cmd_client_port" value="$(arg local_cmd_client_port)" />
+            <param name="local_vid_server_port" value="$(arg local_vid_server_port)" />
+            <param name="initial_frame" value="300" />
+            <param name="connect_time_out" value="10.0" />
+            <param name="h264_encoded_stream" value="true" />
+        </node>
+
+        <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/tello/image_raw" />
+    </group>    
 </launch>

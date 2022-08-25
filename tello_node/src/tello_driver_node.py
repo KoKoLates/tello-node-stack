@@ -1,11 +1,9 @@
 #! /usr/bin/env python3
-
+import av
 import math
 import time
 import rospy
 import threading
-import cv2
-import av
 import numpy as np
 
 from tellopy._internal import tello, error, logger, event
@@ -28,10 +26,18 @@ class Tello_Node(tello.Tello):
         self.connect_time_out =rospy.get_param('~connect_time_out', 10.0)
         self.h264_encoded_stream = bool(rospy.get_param('~h264_encoded_stream', False))
 
+        # Height Information from EVENT_FLIGHT_DATA
+        # That would be more accurate then Monocular Viausl SLAM
         self.height = 0
+
         self.cv_bridge = CvBridge()
         self.frame_thread = None
-        self.EVENT_VIDEO_FRAME_H264 = event.Event('video_frame_h264')
+        self.EVENT_VIDEO_FRAME_H264 = event.Event('video frame h264')
+
+        # Reconstruction H264 video frames
+        self.sub_last = False
+        self.prev_seq_id = None
+        self.seq_block_count = 0
 
         super(Tello_Node, self).__init__(port=9000)
 
@@ -123,7 +129,7 @@ class Tello_Node(tello.Tello):
             self.frame_thread.join()
 
     def flight_data_callback(self, event, sender, data, **args):
-        speed_horizontal_mps = math.sqrt(math.pow(data.north_speed) + math.pow(data.east_speed)) / 10.0
+        speed_horizontal_mps = math.sqrt(math.pow(data.north_speed, 2) + math.pow(data.east_speed, 2)) / 10.0
         self.height = data.height / 10.0
         msg = tello_status(
             height_m = data.height / 10.0,
@@ -132,9 +138,50 @@ class Tello_Node(tello.Tello):
             speed_northing_mps = -data.east_speed / 10.0,
             speed_vertival_mps = -data.ground_speed / 10.0,
             speed_horizontal_mps = speed_horizontal_mps,
-            # To be Finished
         )
         self.status_publisher.publish(msg)
+
+    def video_data_callback(self, event, sender, data, **args):
+        now = time.time()
+
+        # Parsing the packet
+        seq_id = data[0]
+        sub_id = data[1]
+        packet = data[2:]
+        
+        if sub_id >= 128:
+            sub_id -= 128
+            self.sub_last = True
+
+        # Associate the packet to new frame
+        if self.prev_seq_id is None or self.prev_seq_id != seq_id:
+            # Dectect wrap-arounds
+            if self.prev_seq_id is not None and self.prev_seq_id > seq_id:
+                self.seq_block_count += 1
+            
+            self.frame_pkts = [None] * 128
+            self.frame_time = now
+            self.prev_seq_id = seq_id
+        
+        self.frame_pkts[sub_id] = packet
+
+        # Publish frame if completed
+        if self.sub_last and all(self.frame_pkts[:sub_id + 1]):
+            if isinstance(self.frame_pkts[sub_id], str):
+                frame = ''.join(self.frame_pkts[:sub_id + 1])
+            else:
+                frame = b''.join(self.frame_pkts[:sub_id + 1])
+
+            self._Tello__publish(event=self.EVENT_VIDEO_FRAME_H264, data=(frame, self.seq_block_count * 256 + seq_id, self.frame_time))
+    
+    def h264_video_frame_callback(self, event, sender, data, **args):
+        frame, seq_id, frame_secs = data
+        pkt_msg = CompressedImage()
+        pkt_msg.header.seq = seq_id
+        # pkt_msg.header.frame_id = self.camera_info.header,frame_id
+        pkt_msg.header.stamp = rospy.Time.from_sec(frame_secs)
+        pkt_msg.data = frame
+        self.image_publisher_h264.publish(pkt_msg)
 
     # Video threading
     def frame_work_loop(self) -> None:
@@ -147,7 +194,6 @@ class Tello_Node(tello.Tello):
             except BaseException as err:
                 rospy.logerr('frame grab: pyav stream failed - {}'.format(str(err)))
                 time.sleep(1.0)
-                return
         
         rospy.loginfo('Video stream Connected')
         while self.state != self.STATE_QUIT:
@@ -171,6 +217,7 @@ class Tello_Node(tello.Tello):
                         continue
 
                     self.image_publisher_raw.publish(img_msg)
+                break
 
             except BaseException as err:
                 rospy.logerr('frame grab: pyav decoder failed - {}'.format(str(err)))
