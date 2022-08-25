@@ -35,10 +35,10 @@ class Tello_Node(tello.Tello):
         self.EVENT_VIDEO_FRAME_H264 = event.Event('video frame h264')
 
         # Reconstruction H264 video frames
-        self.sub_last = False
         self.prev_seq_id = None
         self.seq_block_count = 0
 
+        self.log = RospyLogger('Tello')
         super(Tello_Node, self).__init__(port=9000)
 
         # Tello Connection
@@ -141,6 +141,7 @@ class Tello_Node(tello.Tello):
         )
         self.status_publisher.publish(msg)
 
+    
     def video_data_callback(self, event, sender, data, **args):
         now = time.time()
 
@@ -148,7 +149,7 @@ class Tello_Node(tello.Tello):
         seq_id = data[0]
         sub_id = data[1]
         packet = data[2:]
-        
+        self.sub_last = False
         if sub_id >= 128:
             sub_id -= 128
             self.sub_last = True
@@ -178,7 +179,7 @@ class Tello_Node(tello.Tello):
         frame, seq_id, frame_secs = data
         pkt_msg = CompressedImage()
         pkt_msg.header.seq = seq_id
-        # pkt_msg.header.frame_id = self.camera_info.header,frame_id
+        pkt_msg.header.frame_id = 'tello/camera_front'
         pkt_msg.header.stamp = rospy.Time.from_sec(frame_secs)
         pkt_msg.data = frame
         self.image_publisher_h264.publish(pkt_msg)
@@ -222,6 +223,25 @@ class Tello_Node(tello.Tello):
             except BaseException as err:
                 rospy.logerr('frame grab: pyav decoder failed - {}'.format(str(err)))
     
+class RospyLogger(logger.Logger):
+    def __init__(self, header=''):
+        super(RospyLogger, self).__init__(header)
+
+    def error(self, str):
+        if self.log_level < logger.LOG_ERROR: return
+        rospy.logerr(str)
+
+    def warn(self, str):
+        if self.log_level < logger.LOG_WARN: return
+        rospy.logwarn(str)
+
+    def info(self, str):
+        if self.log_level < logger.LOG_INFO: return
+        rospy.loginfo(str)
+
+    def debug(self, str):
+        if self.log_level < logger.LOG_DEBUG: return
+        rospy.logdebug(str)
 
 def main() -> None:
     rospy.init_node('tello_driver_node', anonymous=False)
