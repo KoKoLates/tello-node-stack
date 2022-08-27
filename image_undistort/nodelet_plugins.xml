@@ -1,0 +1,7 @@
+<library path="lib/libimage_undistort_nodelet">
+  <class name="image_undistort/ImageUndistortNodelet" type="image_undistort::ImageUndistortNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Image undistort nodelet
+    </description>
+  </class>
+</library>
