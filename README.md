@@ -1,4 +1,8 @@
-# ros-tello-driver
-DJI Tello driver for ROS noetic.
+# Tello Suite 
+The suite of different nodes of DJI Tello for visual SLAM used. The ROS version is mainly for `Noetic`. 
 
-(TODO)
+`TODO`
+## ROS Noetic installation
+```bash
+./ros_noetic_install.sh
+```
