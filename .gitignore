@@ -16,4 +16,4 @@ lib64/
 pip-log.txt
 pip-delete-this-directory.txt
 
-.vscode
+.vscode/
