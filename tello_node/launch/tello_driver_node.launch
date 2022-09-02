@@ -19,5 +19,5 @@
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/tello/image_raw" />
     </group>
 
-    <include file="$(find image_undistort)/launch/thesis_tello_undistort.launch" />
+    <include file="$(find image_undistort)/launch/tello_undistort.launch" />
 </launch>

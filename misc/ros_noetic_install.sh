@@ -14,8 +14,8 @@ case $version in
 	"focal" )
 	;;
 	*)
-    echo "[ERROR] The ROS Noetic is primarily targeted at Ubuntu Focal (20.04)."
-    exit 0
+	echo "[ERROR] The ROS Noetic is primarily targeted at Ubuntu Focal (20.04)."
+	exit 0
 esac
 
 # Setup the ROS package list to source.list
@@ -24,7 +24,7 @@ sudo sh -c 'echo \"deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) mai
 
 # Check source.list is added or not
 if [ ! -e /etc/apt/source.list.d/ros-latest.list]; then
-	echo "[ERROR] Unable to setup source.list. Exiting..."
+	echo "[ERROR] Unable to setup source.list. Exiting..."	
 	exit 0
 fi
 echo "[INFO] Source list setup already."
@@ -41,7 +41,7 @@ case $ret in
 	"OK" )
     ;;
 	*)
-    echo "[ERROR] Unable to add the ROS keys."
+	echo "[ERROR] Unable to add the ROS keys."
 	exit 0
 esac
 echo "[INFO] Keys Adding Done."

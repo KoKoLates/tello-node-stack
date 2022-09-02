@@ -11,8 +11,8 @@
     <param name="output_camera_info_source" value="auto_generated"/>
     <param name="publish_tf" value="false" />
     <rosparam file="$(arg calib_path)"/>
-    <remap from="input/image" to="$(arg input_camera_name)/image_raw"/>
 
+    <remap from="input/image" to="$(arg input_camera_name)/image_raw"/>
     <remap from="output/image" to="/tello_rect/image_raw"/>
     <remap from="/tf" to="/tf_image_undistorted"/>
   </node>
