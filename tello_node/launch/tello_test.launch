@@ -18,7 +18,4 @@
 
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/camera/image_raw" />
     </group>
-
-    <!--node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" respawn="false" output="screen" /-->
-    <!--node name="tello_keyboard_teleop" pkg="keyboard_teleop" type="keyboard_teleop_node.py" output="screen" /-->
 </launch>

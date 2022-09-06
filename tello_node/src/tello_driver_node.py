@@ -142,10 +142,7 @@ class Tello_Node(tello.Tello):
         self.status_publisher.publish(msg)
 
     
-    def video_data_callback(self, event, sender, data, **args) -> None:
-        """
-        A Call back function for getting the video data
-        """
+    def video_data_callback(self, event, sender, data, **args):
         now = time.time()
 
         # Parsing the packet

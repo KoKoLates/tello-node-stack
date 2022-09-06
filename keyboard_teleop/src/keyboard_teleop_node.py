@@ -25,10 +25,13 @@ trigger_bindings = {
     '-': -2,  # Land
 }
 
+# Setup a factor for slow down the speed more movement
+speed_factor = 0.1
+
 class Publish_Threading(threading.Thread):
     def __init__(self, rate) -> None:
         super(Publish_Threading, self).__init__()
-        self.publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        self.publisher = rospy.Publisher('/tello/cmd_vel', Twist, queue_size=1)
 
         self.x, self.y, self.z, self.theta = 0.0, 0.0, 0.0, 0.0
         self.condition = threading.Condition()
@@ -57,7 +60,7 @@ class Publish_Threading(threading.Thread):
 
     def update(self, x:float, y:float, z:float, theta:float) -> None:
         self.condition.acquire()
-        self.x, self.y, self.z, self.theta = x, y, z, theta
+        self.x, self.y, self.z, self.theta = x/0.1, y/0.1, z/0.1, theta/0.1
         self.condition.notify() # Notify publish thread that a new message obtained
         self.condition.release()
 
@@ -104,8 +107,8 @@ if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
     
     rospy.init_node('keyboard_teleop_node')
-    land_publisher = rospy.Publisher('/land', Empty, queue_size=1)
-    take_off_publisher = rospy.Publisher('/take_off', Empty, queue_size=1)
+    land_publisher = rospy.Publisher('/tello/land', Empty, queue_size=1)
+    take_off_publisher = rospy.Publisher('/tello/take_off', Empty, queue_size=1)
 
     # Get paramter sever
     repeat = rospy.get_param('~repeat_rate', 0.0)
