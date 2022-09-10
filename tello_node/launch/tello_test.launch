@@ -17,5 +17,8 @@
         </node>
 
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/camera/image_raw" />
+
     </group>
+
+    <include file="/home/koko/orbslam2_ws/src/orb_slam_2_ros/ros/launch/orb_slam2_tello_mono.launch" />
 </launch>

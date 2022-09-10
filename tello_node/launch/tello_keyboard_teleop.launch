@@ -1,9 +1,15 @@
 <launch>
+    <!-- arguments of the tello node -->
     <arg name="namespace" default="tello" />
     <arg name="tello_ip" default="192.168.10.1" />
     <arg name="tello_cmd_server_port" default="8889" />
     <arg name="local_cmd_client_port" default="8890" />
     <arg name="local_vid_server_port" default="6038" />
+
+    <!-- arguments of the keyboard teleop node -->
+    <arg name="speed" default="0.5" />
+    <arg name="repeat_rate" default="0.0" />
+    <arg name="key_timeout" default="0.5" />
 
     <group ns="$(arg namespace)">
         <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen">
@@ -11,14 +17,22 @@
             <param name="tello_cmd_server_port" value="$(arg tello_cmd_server_port)" />
             <param name="local_cmd_client_port" value="$(arg local_cmd_client_port)" />
             <param name="local_vid_server_port" value="$(arg local_vid_server_port)" />
-            <param name="initial_frame" value="300" />
+            <param name="initial_frame" value="100" />
             <param name="connect_time_out" value="10.0" />
             <param name="h264_encoded_stream" value="true" />
         </node>
-
+        
+        <!-- image image_transport node to convert the compressed image into raw image for ORB SLAM2 -->
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/camera/image_raw" />
+
+        <node name="tello_keyboard_teleop" pkg="keyboard_teleop" type="keyboard_teleop_node.py" output="screen" >
+            <param name="speed" value="$(arg speed)" /> 
+            <param name="repeat_rate" value="$(arg repeat_rate)" />
+            <param name="key_timeout" value="$(arg key_timeout)" />
+    </node>
+
     </group>
 
-    <!--node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" respawn="false" output="screen" /-->
-    <!--node name="tello_keyboard_teleop" pkg="keyboard_teleop" type="keyboard_teleop_node.py" output="screen" /-->
+    <!-- <node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" respawn="false" output="screen" /> -->
+    <include file="/home/koko/orbslam2_ws/src/orb_slam_2_ros/ros/launch/orb_slam2_tello_mono.launch" />
 </launch>

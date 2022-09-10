@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import threading
+from turtle import speed
 
 import rospy
 import sys, select, termios, tty
@@ -11,13 +12,13 @@ from std_msgs.msg import Empty
 move_bindings = {
     'w':( 0, 0, 1, 0),  # Up
     's':( 0, 0,-1, 0),  # Down
-    'a':( 0, 0, 0,-1),  # Yaw Left
-    'd':( 0, 0, 0, 1),  # Yaw Right
+    'a':( 0, 0, 0, 1),  # Yaw Left
+    'd':( 0, 0, 0, -1),  # Yaw Right
 
     'i':( 1, 0, 0, 0),  # Front
     'k':(-1, 0, 0, 0),  # Back
-    'j':( 0,-1, 0, 0),  # Left
-    'l':( 0, 1, 0, 0),  # Right
+    'j':( 0, 1, 0, 0),  # Left
+    'l':( 0, -1, 0, 0),  # Right
 }
 
 trigger_bindings = {
@@ -25,15 +26,12 @@ trigger_bindings = {
     '-': -2,  # Land
 }
 
-# Setup a factor for slow down the speed more movement
-speed_factor = 0.1
-
 class Publish_Threading(threading.Thread):
-    def __init__(self, rate) -> None:
+    def __init__(self, rate:float) -> None:
         super(Publish_Threading, self).__init__()
         self.publisher = rospy.Publisher('/tello/cmd_vel', Twist, queue_size=1)
 
-        self.x, self.y, self.z, self.theta = 0.0, 0.0, 0.0, 0.0
+        self.x, self.y, self.z, self.theta, self.speed = 0.0, 0.0, 0.0, 0.0, 0.0
         self.condition = threading.Condition()
         self.flag = False
 
@@ -58,9 +56,9 @@ class Publish_Threading(threading.Thread):
         if rospy.is_shutdown():
             rospy.logerr('Got shutdown request before subscribers connected')
 
-    def update(self, x:float, y:float, z:float, theta:float) -> None:
+    def update(self, x:float, y:float, z:float, theta:float, speed:float) -> None:
         self.condition.acquire()
-        self.x, self.y, self.z, self.theta = x/0.1, y/0.1, z/0.1, theta/0.1
+        self.x, self.y, self.z, self.theta, self.speed = x, y, z, theta, speed
         self.condition.notify() # Notify publish thread that a new message obtained
         self.condition.release()
 
@@ -71,9 +69,9 @@ class Publish_Threading(threading.Thread):
             self.condition.wait(self.time_out) # Wait for a new message or timeout
 
             # Twist message
-            twist.linear.x = self.x
-            twist.linear.y = self.y
-            twist.linear.z = self.z
+            twist.linear.x = self.x * self.speed
+            twist.linear.y = self.y * self.speed
+            twist.linear.z = self.z * self.speed
             twist.angular.x, twist.angular.y = 0, 0
             twist.angular.z = self.theta
 
@@ -85,22 +83,25 @@ class Publish_Threading(threading.Thread):
         # Publish stop message as the thread out
         twist.linear.x, twist.linear.y, twist.linear.z = 0, 0, 0
         twist.angular.x, twist.angular.y, twist.angular.z = 0, 0, 0
+        self.publisher.publish(twist)
 
     def stop(self) -> None:
         self.flag = True
-        self.update(0.0, 0.0, 0.0, 0.0)
+        self.update(0.0, 0.0, 0.0, 0.0, 0.0)
         self.join()
 
-def getKey(settings:list, timeout) -> str:
-    tty.setraw(sys.stdin.fileno())
-    rlist, _, _ = select.select([sys.stdin], [], [], timeout)
-    if rlist:
-        key = sys.stdin.read(1)
-    else:
-        key = ''
+    @staticmethod
+    def getKey(settings:list, timeout) -> str:
+        tty.setraw(sys.stdin.fileno())
+        rlist, _, _ = select.select([sys.stdin], [], [], timeout)
+        if rlist:
+            key = sys.stdin.read(1)
+        else:
+            key = ''
     
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-    return key    
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+        return key 
+   
 
 
 if __name__ == "__main__":
@@ -111,8 +112,9 @@ if __name__ == "__main__":
     take_off_publisher = rospy.Publisher('/tello/take_off', Empty, queue_size=1)
 
     # Get paramter sever
-    repeat = rospy.get_param('~repeat_rate', 0.0)
-    timeout = rospy.get_param('~key_timeout', 0.0)
+    speed_scale = float(rospy.get_param('~speed', 1.0))
+    repeat = float(rospy.get_param('~repeat_rate', 0.0))
+    timeout = float(rospy.get_param('~key_timeout', 0.0))
     if timeout == 0.0:
         timeout = None
 
@@ -122,9 +124,9 @@ if __name__ == "__main__":
     try:
         
         publisher_thread.wait_for_subscriber()
-        publisher_thread.update(x, y, z, theta)
+        publisher_thread.update(x, y, z, theta, speed_scale)
         while True:
-            key = getKey(settings, timeout)
+            key = publisher_thread.getKey(settings, timeout)
             if key in move_bindings.keys():
                 x = move_bindings[key][0]
                 y = move_bindings[key][1]
@@ -155,7 +157,7 @@ if __name__ == "__main__":
                 if key == '\x03': # <ctrl-c> ascii for exit
                     break
             
-            publisher_thread.update(x, y, z, theta)
+            publisher_thread.update(x, y, z, theta, speed_scale)
             rospy.loginfo('x:{} y:{} z:{} theta:{}'.format(x, y, z, theta))
     
     except Exception as exception:
