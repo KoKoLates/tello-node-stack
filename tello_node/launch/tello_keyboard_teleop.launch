@@ -5,7 +5,9 @@
     <arg name="tello_cmd_server_port" default="8889" />
     <arg name="local_cmd_client_port" default="8890" />
     <arg name="local_vid_server_port" default="6038" />
+    <arg name="camera_calibration" default="$(find tello_node)/config/960x720.yaml" />
 
+    <!-- arguments of the keyboard teleop node  -->
     <arg name="speed" default="0.5" />
     <arg name="repeat_rate" default="0.0" />
     <arg name="key_timeout" default="0.4" />
@@ -19,6 +21,8 @@
             <param name="initial_frame" value="100" />
             <param name="connect_time_out" value="10.0" />
             <param name="h264_encoded_stream" value="true" />
+            <param name="camera_calibration" value="$(arg camera_calibration)" />
+            <remap from="/tello/camera_info" to="/camera/camera_info" />
         </node>
         
         <!-- image image_transport node to convert the compressed image into raw image for ORB SLAM2 -->

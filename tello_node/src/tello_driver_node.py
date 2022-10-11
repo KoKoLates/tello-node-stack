@@ -3,16 +3,19 @@ import av
 import math
 import time
 import rospy
+import tf2_ros
 import threading
 import numpy as np
+import camera_info_manager as camera_info
 
+from tello_node.msg import tello_status
 from tellopy._internal import tello, error, logger, event
 from cv_bridge import CvBridge, CvBridgeError
-from geometry_msgs.msg import Twist
-from std_msgs.msg import Empty, UInt8, Bool, UInt8MultiArray
+from geometry_msgs.msg import Twist, TransformStamped
+from std_msgs.msg import Empty
 from sensor_msgs.msg import Image, CompressedImage, Imu, CameraInfo
 from nav_msgs.msg import Odometry
-from tello_node.msg import tello_status
+
 
 class Tello_Node(tello.Tello):
     def __init__(self) -> None:
@@ -22,8 +25,9 @@ class Tello_Node(tello.Tello):
         self.local_cmd_client_port = int(rospy.get_param('~local_cmd_client_port', 8890))
         self.local_vid_server_port = int(rospy.get_param('~local_vid_server_port', 6038))
 
-        self.initial_frame = int(rospy.get_param('~initial_frame', 300))
+        self.initial_frame = int(rospy.get_param('~initial_frame', 100))
         self.connect_time_out =rospy.get_param('~connect_time_out', 10.0)
+        self.calibration_path = rospy.get_param('~camera_calibraiton', '')
         self.h264_encoded_stream = bool(rospy.get_param('~h264_encoded_stream', False))
 
         # Height Information from EVENT_FLIGHT_DATA
@@ -53,10 +57,9 @@ class Tello_Node(tello.Tello):
             return
         rospy.loginfo('Connected to drone')
         rospy.on_shutdown(self.shutdown_callback)
-        
-        self.subscribe(self.EVENT_FLIGHT_DATA, self.flight_data_callback)
 
         # Publihser for Tello Status
+        self.odom_publisher = rospy.Publisher('odom', Odometry, queue_size=1, latch=True)
         self.status_publisher = rospy.Publisher('status', tello_status, queue_size=1, latch=True)
         # Publisher for image signal
         if self.h264_encoded_stream:
@@ -78,6 +81,14 @@ class Tello_Node(tello.Tello):
             self.frame_thread = threading.Thread(target=self.frame_work_loop)
             self.frame_thread.start()
 
+        self.subscribe(self.EVENT_LOG_DATA, self.log_data_callback)
+        self.subscribe(self.EVENT_FLIGHT_DATA, self.flight_data_callback)
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+
+        self.camera_info = camera_info.loadCalibrationFile(self.calibration_path, 'camera_front')
+        self.camera_info.header.frame_id = rospy.get_namespace() + 'camera_front'
+        self.camera_info_publisher = rospy.Publisher('/tello/camera_info', CameraInfo, queue_size=1,  latch=True)
+        self.camera_info_publisher.publish(self.camera_info)
         
         rospy.loginfo('The Tello driver node is ready')
 
@@ -97,38 +108,28 @@ class Tello_Node(tello.Tello):
 
     # Callback function
     def cmd_vel_callback(self, msg:Twist) -> None:
-        """
-        Executing the Twist command
-        """
         self.set_pitch(msg.linear.x)
         self.set_roll(-msg.linear.y)
         self.set_yaw(-msg.angular.z)
         self.set_throttle(msg.linear.z)
 
     def take_off_callback(self, msg:Empty) -> None:
-        """
-        Execute the take off command of the Tello
-        """
         success = self.takeoff()
         self.cmd_success_notify('Take off', success)
 
     def land_callback(self, msg:Empty) -> None:
-        """
-        Executed the land command of the Tello
-        """
         success = self.land()
         self.cmd_success_notify('Land', success)
 
     def shutdown_callback(self) -> None:
-        """
-        Shutdown the Tello driver node
-        """
         self.land()
         self.quit()
         if self.frame_thread is not None:
             self.frame_thread.join()
 
     def flight_data_callback(self, event, sender, data, **args):
+        # THe fight data callback function is to publish the flying status of tello
+        # The content is unfinished. 
         speed_horizontal_mps = math.sqrt(math.pow(data.north_speed, 2) + math.pow(data.east_speed, 2)) / 10.0
         self.height = data.height / 10.0
         msg = tello_status(
@@ -141,7 +142,23 @@ class Tello_Node(tello.Tello):
         )
         self.status_publisher.publish(msg)
 
-    
+    def log_data_callback(self, event, sender, data, **args):
+        now = rospy.Time.now()
+
+        # if self.tf_broadcaster:
+        #     tf = TransformStamped()
+        #     tf.header.stamp = now
+        #     tf.header.frame_id = 'base_link'
+        #     tf.child_frame_id = 'tello_link'
+        #     tf.transform.translation.x = 0.0
+        #     tf.transform.translation.y = 0.0
+        #     tf.transform.translation.z = self.height
+        #     tf.transform.rotation.x = 0.0
+        #     tf.transform.rotation.y = 0.0
+        #     tf.transform.rotation.z = 0.0
+        #     tf.transform.rotation.w = 1.0
+        #     self.tf_broadcaster.sendTransform(tf)
+                
     def video_data_callback(self, event, sender, data, **args):
         now = time.time()
 
