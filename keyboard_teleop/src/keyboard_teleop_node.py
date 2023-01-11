@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import threading
-from turtle import speed
 
 import rospy
 import sys, select, termios, tty

@@ -3,7 +3,6 @@ import av
 import math
 import time
 import rospy
-import tf2_ros
 import threading
 import numpy as np
 import camera_info_manager as camera_info
@@ -11,9 +10,9 @@ import camera_info_manager as camera_info
 from tello_node.msg import tello_status
 from tellopy._internal import tello, error, logger, event
 from cv_bridge import CvBridge, CvBridgeError
-from geometry_msgs.msg import Twist, TransformStamped
+from geometry_msgs.msg import Twist
 from std_msgs.msg import Empty
-from sensor_msgs.msg import Image, CompressedImage, Imu, CameraInfo
+from sensor_msgs.msg import Image, CompressedImage, CameraInfo
 from nav_msgs.msg import Odometry
 
 
@@ -42,7 +41,6 @@ class Tello_Node(tello.Tello):
         self.prev_seq_id = None
         self.seq_block_count = 0
 
-        self.log = RospyLogger('Tello')
         super(Tello_Node, self).__init__(port=9000)
 
         # Tello Connection
@@ -61,6 +59,7 @@ class Tello_Node(tello.Tello):
         # Publihser for Tello Status
         self.odom_publisher = rospy.Publisher('odom', Odometry, queue_size=1, latch=True)
         self.status_publisher = rospy.Publisher('status', tello_status, queue_size=1, latch=True)
+        
         # Publisher for image signal
         if self.h264_encoded_stream:
             self.image_publisher_h264 = rospy.Publisher('image_raw/h264', CompressedImage, queue_size=10)
@@ -83,7 +82,6 @@ class Tello_Node(tello.Tello):
 
         self.subscribe(self.EVENT_LOG_DATA, self.log_data_callback)
         self.subscribe(self.EVENT_FLIGHT_DATA, self.flight_data_callback)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.camera_info = camera_info.loadCalibrationFile(self.calibration_path, 'camera_front')
         self.camera_info.header.frame_id = rospy.get_namespace() + 'camera_front'
@@ -96,10 +94,9 @@ class Tello_Node(tello.Tello):
     def cmd_success_notify(command:str, success:bool) -> None:
         """
         Inform the user whether the command is executed or failed
-        Parameters
-        ----------
-            command(str): The command be executed expectly.
-            success(bool): The flag that record the execution is success or not.
+        
+        :param command (str): The command to be executed expectly.
+        :param success (bool): The flag that record the execution is success or not. 
         """
         if success:
             rospy.loginfo('{} - executed.'.format(command))
@@ -149,10 +146,10 @@ class Tello_Node(tello.Tello):
         #     tf = TransformStamped()
         #     tf.header.stamp = now
         #     tf.header.frame_id = 'base_link'
-        #     tf.child_frame_id = 'tello_link'
+        #     tf.child_frame_id = 'camera_link'
         #     tf.transform.translation.x = 0.0
         #     tf.transform.translation.y = 0.0
-        #     tf.transform.translation.z = self.height
+        #     tf.transform.translation.z = 0.0
         #     tf.transform.rotation.x = 0.0
         #     tf.transform.rotation.y = 0.0
         #     tf.transform.rotation.z = 0.0
@@ -239,26 +236,6 @@ class Tello_Node(tello.Tello):
 
             except BaseException as err:
                 rospy.logerr('frame grab: pyav decoder failed - {}'.format(str(err)))
-    
-class RospyLogger(logger.Logger):
-    def __init__(self, header=''):
-        super(RospyLogger, self).__init__(header)
-
-    def error(self, str):
-        if self.log_level < logger.LOG_ERROR: return
-        rospy.logerr(str)
-
-    def warn(self, str):
-        if self.log_level < logger.LOG_WARN: return
-        rospy.logwarn(str)
-
-    def info(self, str):
-        if self.log_level < logger.LOG_INFO: return
-        rospy.loginfo(str)
-
-    def debug(self, str):
-        if self.log_level < logger.LOG_DEBUG: return
-        rospy.logdebug(str)
 
 def main() -> None:
     rospy.init_node('tello_driver_node', anonymous=False)

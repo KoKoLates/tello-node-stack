@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  nav_msgs
   message_generation
 )
 
@@ -23,7 +24,10 @@ add_message_files(
 
 generate_messages(
   DEPENDENCIES
-  std_msgs 
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
 )
 
 catkin_package(
