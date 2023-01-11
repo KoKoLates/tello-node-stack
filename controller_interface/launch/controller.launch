@@ -1,0 +1,16 @@
+<launch>
+    <include file="$(find controller_interface)/launch/rviz.launch" />
+    <include file="$(find controller_interface)/launch/pid_controller.launch" />
+
+    <node pkg="controller_interface" type="interface" name="control_interface" >
+        <remap from="error_x" to="/pid_pitch/state" />
+        <remap from="error_y" to="/pid_roll/state" />
+        <remap from="error_z" to="/pid_thrust/state" />
+        <remap from="error_yaw" to="/pid_yaw/state" />
+        <remap from="/orb_slam/pose" to="/orb_slam2_mono/pose" />
+    </node>
+
+    <node pkg="controller_interface" type="path_visualization" name="path_visualizer">
+         <remap from="/orb_slam/pose" to="/orb_slam2_mono/pose" />
+    </node>
+</launch>
