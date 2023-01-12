@@ -22,6 +22,7 @@
             <param name="connect_time_out" value="10.0" />
             <param name="h264_encoded_stream" value="true" />
             <param name="camera_calibration" value="$(arg camera_calibration)" />
+            <remap from="/tello/camera_info" to="/camera/camera_info" />
         </node>
         
         <!-- image image_transport node to convert the compressed image into raw image for ORB SLAM2 -->

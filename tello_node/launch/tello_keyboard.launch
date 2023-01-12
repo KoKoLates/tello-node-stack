@@ -4,6 +4,7 @@
     <arg name="tello_cmd_server_port" default="8889" />
     <arg name="local_cmd_client_port" default="8890" />
     <arg name="local_vid_server_port" default="6038" />
+    <arg name="camera_calibration" default="$(find tello_node)/config/960x720.yaml" />
 
     <group ns="$(arg namespace)">
         <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen">
@@ -14,10 +15,10 @@
             <param name="initial_frame" value="300" />
             <param name="connect_time_out" value="10.0" />
             <param name="h264_encoded_stream" value="true" />
+            <param name="camera_calibration" value="$(arg camera_calibration)" />
         </node>
 
-        <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/tello/image_raw" />
-    </group>
+        <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/camera/image_raw" />
 
-    <include file="$(find image_undistort)/launch/tello_undistort.launch" />
+    </group>
 </launch>

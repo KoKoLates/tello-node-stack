@@ -3,7 +3,7 @@
     <arg name="namespace" default="tello" />
     <arg name="speed" default="0.5" />
     <arg name="repeat_rate" default="0.0" />
-    <arg name="key_timeout" default="0.4" />
+    <arg name="key_timeout" default="0.6" />
 
     <group ns="$(arg namespace)">
         <node name="tello_keyboard_teleop" pkg="keyboard_teleop" type="keyboard_teleop_node.py" output="screen">
