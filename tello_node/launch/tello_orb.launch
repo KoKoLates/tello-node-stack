@@ -7,11 +7,6 @@
     <arg name="local_vid_server_port" default="6038" />
     <arg name="camera_calibration" default="$(find tello_node)/config/960x720.yaml" />
 
-    <!-- arguments of the keyboard teleop node  -->
-    <!-- <arg name="speed" default="0.5" />
-    <arg name="repeat_rate" default="0.0" />
-    <arg name="key_timeout" default="0.4" /> -->
-
     <group ns="$(arg namespace)">
         <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen">
             <param name="tello_ip" value="$(arg tello_ip)" />
@@ -28,16 +23,12 @@
         <!-- image image_transport node to convert the compressed image into raw image for ORB SLAM2 -->
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/tello/image_raw" />
         <node pkg="tf2_ros" name="camera_offset" type="static_transform_publisher" args="0 0 0 0 0 0 base_link camera_link" />
-
-        <!-- <node name="tello_keyboard_teleop" pkg="keyboard_teleop" type="keyboard_teleop_node.py" output="screen">
-            <param name="speed" value="$(arg speed)" /> 
-            <param name="repeat_rate" value="$(arg repeat_rate)" />
-            <param name="key_timeout" value="$(arg key_timeout)" />
-        </node> -->
     </group>
 
     <!-- <node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" respawn="false" output="screen" /> -->
+    <!-- <include file="$(find keyboard_teleop)/launch/keyboard_teleop.launch" /> -->
     <include file="/home/koko/orbslam2_ws/src/orb_slam_2_ros/ros/launch/orb_slam2_tello_mono.launch" />
+    <include file="$(find controller_interface)/launch/rviz.launch" />
     <!-- <include file="$(find keyboard_teleop)/launch/keyboard_teleop.launch" /> -->
     <!-- <include file="/home/koko/orb_feature_ws/src/orbslam-map-saving-extension/orb_slam2_ros/launch/orb_test.launch" /> -->
 </launch>

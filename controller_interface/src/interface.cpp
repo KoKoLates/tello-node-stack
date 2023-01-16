@@ -4,6 +4,7 @@
 
 #include <std_msgs/Float64.h>
 #include <nav_msgs/Odometry.h>
+#include <tf2_msgs/TFMessage.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -21,7 +22,7 @@ namespace interface {
     // current status
     static double x_cur = 0.0;
     static double y_cur = 0.0;
-    static double z_cur = 0.2;
+    static double z_cur = 0.0;
 
     // control effort
     static double u_x_cur = 0.0;
@@ -32,7 +33,7 @@ namespace interface {
     static double q_x_cur = 0.0;
     static double q_y_cur = 0.0;
     static double q_z_cur = 0.0;
-    static double q_w_cur = 0.0;
+    static double q_w_cur = 1.0;
 
     static double roll_cur = 0.0;
     static double pitch_cur = 0.0;
@@ -61,13 +62,26 @@ void stateCallback(const geometry_msgs::PoseStamped &currentPose) {
     q_w_cur = currentPose.pose.orientation.w;
 }
 
+void TFStateCallback(const tf2_msgs::TFMessage currentPose) {
+    time_stamp = currentPose.transforms[0].header.stamp;
+    x_cur = currentPose.transforms[0].transform.translation.x;
+    y_cur = currentPose.transforms[0].transform.translation.y;
+    z_cur = currentPose.transforms[0].transform.translation.z;
+
+    q_x_cur = currentPose.transforms[0].transform.rotation.x;
+    q_y_cur = currentPose.transforms[0].transform.rotation.y;
+    q_z_cur = currentPose.transforms[0].transform.rotation.z;
+    q_w_cur = currentPose.transforms[0].transform.rotation.w;
+
+}
+
 bool set_reference_pose(controller_interface::set_reference::Request &request, 
                         controller_interface::set_reference::Response &response) {
     x_ref = request.x_ref;
     y_ref = request.y_ref;
     z_ref = request.z_ref;
     yaw_ref = request.yaw_ref;
-    ROS_INFO("[INFO] Setup the reference pose: (x: %lf, y: %lf, z: %lf, yzw: %lf)", 
+    ROS_INFO("[INFO] Setup the reference pose: (x: %lf, y: %lf, z: %lf, yaw: %lf)", 
                 x_ref, y_ref, z_ref, yaw_ref);
     response.update_status = true;
     REFERENCE_IS_NOT_SET = false;
@@ -79,10 +93,10 @@ int main(int argc, char **argv) {
     ros::NodeHandle control_interface_node;
 
     while(ros::ok() && ros::Time(0) == ros::Time::now()) {
-        ROS_INFO("[INFO] Control interface is waiting for time becom non-zero state.");
+        ROS_INFO("Control interface is waiting for time becom non-zero state.");
         sleep(1);
     }
-    ROS_INFO("[INFO] Control interface node start!");
+    ROS_INFO("Control interface node start!");
 
     // Initialize the publisher for advertise
     ros::Publisher x_publisher = control_interface_node.advertise<std_msgs::Float64>("/error_x", 1);
@@ -96,6 +110,7 @@ int main(int argc, char **argv) {
 
     // Initialize the subscriber
     ros::Subscriber state_subscriber = control_interface_node.subscribe("/orb_slam/pose", 1, stateCallback);
+    ros::Subscriber ekf_state_subscriber = control_interface_node.subscribe("/tf", 1, TFStateCallback);
 
     // Initialize the advertise service to update reference position
     ros::ServiceServer set_reference_server = control_interface_node.advertiseService("/set_reference", set_reference_pose);
@@ -110,7 +125,7 @@ int main(int argc, char **argv) {
     }
 
     while(ros::ok()) {
-        ROS_INFO("[INFO] Current Pose: (x: %.03lf, y: %.03lf, z: %.03lf, yaw: %.03lf", x_cur, y_cur, z_cur, yaw_cur);
+        ROS_INFO("Current Pose: (x: %.03lf, y: %.03lf, z: %.03lf, yaw: %.03lf", x_cur, y_cur, z_cur, yaw_cur);
         yaw_cur = quadternion2yaw(q_x_cur, q_y_cur, q_z_cur, q_w_cur);
 
         error_x_ref = x_ref - x_cur;
@@ -118,17 +133,17 @@ int main(int argc, char **argv) {
 
         error_x.data = error_x_ref * cos(yaw_cur) + error_y_ref * sin(yaw_cur);
         error_y.data = error_x_ref * sin(yaw_cur) - error_y_ref * cos(yaw_cur);
-        error_z.data = z_ref = z_cur;
+        error_z.data = z_ref - z_cur;
         error_yaw.data = yaw_ref - yaw_cur;
 
         // tolerance error
-        if(abs(error_x.data) < 0.03) 
+        if(abs(error_x.data) < 0.02) 
             error_x.data = 0.0;
-        if(abs(error_y.data) < 0.03) 
+        if(abs(error_y.data) < 0.02) 
             error_y.data = 0.0;
-        if(abs(error_z.data) < 0.03) 
+        if(abs(error_z.data) < 0.02) 
             error_z.data = 0.0;
-        if(abs(error_yaw.data) < 0.03) 
+        if(abs(error_yaw.data) < 0.1) 
             error_yaw.data = 0.0;
 
 
@@ -137,7 +152,7 @@ int main(int argc, char **argv) {
         y_publisher.publish(error_y);
         z_publisher.publish(error_z);
         yaw_publisher.publish(error_yaw);
-        ROS_INFO("[INFO] Pose Error: (x: %.03lf, y: %.03lf, z: %.03lf, yaw: %.03lf", 
+        ROS_INFO("Pose Error: (x: %.03lf, y: %.03lf, z: %.03lf, yaw: %.03lf", 
                     error_x_ref, error_y_ref, error_z.data, error_yaw.data);
 
         // publish the zero setpoints

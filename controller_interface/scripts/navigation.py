@@ -13,27 +13,22 @@ from geometry_msgs.msg import Twist, Point, Pose, PoseStamped, Quaternion
 class Navigation:
     def __init__(self) -> None:
         rospy.init_node("Navigation")
-        self.rate = rospy.Rate(10) # 10 Hz
+        self.rate = rospy.Rate(30) # 30 Hz
         self.frame_id: str = "map"
         self.waypoint_index: int = 0
         self.home_waypoint: PoseStamped = PoseStamped(
             header = Header(stamp = rospy.Time.now(), frame_id = self.frame_id),
-            pose = Pose(position = Point(0, 0, 1), orientation = Quaternion(0, 0, 0, 1))
+            pose = Pose(position = Point(0, 0, 0.2), orientation = Quaternion(0, 0, 0, 1))
         )
 
         self.waypath: Path = None
         self.waypoints: list = []
         self.current_pose = copy.deepcopy(self.home_waypoint)
 
-        # ORB SLAM scale calibration
-        # self.scale: float = 1.0
-        # self.bias: float = 0.0 # z direction bias
-        # self.is_scale_calibrated = False
-
         self.control_command: Twist = Twist()
 
         # Initialize clinet side for reference point setup serve 
-        rospy.loginfo('[INFO] Waiting for reference pose serve from control interface node.')
+        rospy.loginfo('Waiting for reference pose serve from control interface node.')
         rospy.wait_for_service('/set_reference')
         self.update_reference = rospy.ServiceProxy('/set_reference', set_reference)
         
@@ -46,9 +41,10 @@ class Navigation:
 
 
         # Subscriber
+        # self.ekf_pose_subscriber = rospy.Subscriber('/tf', TFMessage, self.ekf_pose_callback)
         self.pose_subscriber = rospy.Subscriber('/orb_slam2_mono/pose', PoseStamped, self.pose_callback)
-        self.pid_x_subscriber = rospy.Subscriber('/pid_roll/control_effort', Float64, self.control_x_callback)
-        self.pid_y_subscriber = rospy.Subscriber('/pid_pitch/control_effort', Float64, self.control_y_callback)
+        self.pid_x_subscriber = rospy.Subscriber('/pid_pitch/control_effort', Float64, self.control_x_callback)
+        self.pid_y_subscriber = rospy.Subscriber('/pid_roll/control_effort', Float64, self.control_y_callback)
         self.pid_z_subscriber = rospy.Subscriber('/pid_thrust/control_effort', Float64, self.control_z_callback)
         self.pid_yaw_subscriber = rospy.Subscriber('/pid_yaw/control_effort', Float64, self.control_yaw_callback)
 
@@ -63,6 +59,14 @@ class Navigation:
         pose.header.frame_id = self.frame_id
         self.current_pose = pose
         ## There are some method to calibrate the scale
+
+    def ekf_pose_callback(self, pose: TFMessage) -> None:
+        self.current_pose.header = pose.transforms[0].header
+        self.current_pose.pose.position.x = pose.transforms[0].transform.translation.x
+        self.current_pose.pose.position.y = pose.transforms[0].transform.translation.y
+        self.current_pose.pose.position.z = pose.transforms[0].transform.translation.z
+        self.current_pose.pose.orientation = pose.transforms[0].transform.rotation
+
 
     def control_x_callback(self, msg: Float64) -> None:
         self.control_command.linear.x = msg.data
@@ -80,18 +84,14 @@ class Navigation:
     def run(self) -> None:
         """ Execute the navigation mission """
         # I'm trying to use the take off finishede pose as first position
-        # self.take_off()
-        # _, _, yaw = Navigation.getEuler(self.current_pose)
-        # self.add_waypoint(
-        #     self.current_pose.pose.position.x, 
-        #     self.current_pose.pose.position.y, 
-        #     self.current_pose.pose.position.z, 
-        #     yaw
-        # )
-        self.add_waypoint(0.0, 0.0, 0.2, 0.0)
-        self.add_waypoint(0.4, 0.0, 0.2, 0.0)
+        self.add_waypoint(-0.1,-0.15, 0.2, 0.0)
+        self.add_waypoint( 0.3,-0.15, 0.2, 0.0)
+        self.add_waypoint( 0.3, 0.15, 0.2, 0.0)
+        self.add_waypoint(-0.1, 0.15, 0.2, 0.0)
         self.waypath = interpolation.path_generator(self.waypoints, 0.05)
-
+        
+        # take off -> tracking -> back -> landing
+        # self.take_off() # manually
         self.start()
         self.back()
         self.land()
@@ -99,13 +99,14 @@ class Navigation:
 
     def start(self) -> None:
         """ Start to tracking the waypoint that setup """
-        rospy.loginfo('[INFO] Navigation start!')
+        rospy.loginfo('Navigation start!')
         self.set_waypoint(self.waypoints[self.waypoint_index])
 
         while not rospy.is_shutdown():
             self.control_publisher.publish(self.control_command)
             self.waypath_publisher.publish(self.waypath)
-            if self.distance_from_3D(self.waypoints[self.waypoint_index]) < 0.1:
+            if self.distance_from(self.waypoints[self.waypoint_index]) < 0.1:
+                self.control_publisher.publish(Twist()) # Stop
                 if self.is_finish():
                     return
                 else:
@@ -152,7 +153,7 @@ class Navigation:
             )
             return res
         except rospy.ServiceException as exception:
-            rospy.logerr('[ERROR] Service call failed: %s' %exception)
+            rospy.logerr('Service call failed: %s' %exception)
 
     def back(self) -> None:
         """ Back to the origin position """
@@ -160,26 +161,27 @@ class Navigation:
         self.set_waypoint(self.home_waypoint)
         while not rospy.is_shutdown():
             self.control_publisher.publish(self.control_command)
-            if self.distance_from_2D(self.home_waypoint) < 0.1:
+            if self.distance_from(self.home_waypoint) < 0.1:
+                self.control_publisher.publish(Twist()) # Stop
                 return
             self.rate.sleep()
 
 
     def take_off(self) -> None:
         """ Take off the drone """
-        rospy.loginfo('[INFO] Take Off...')
+        rospy.loginfo('Take Off...')
         self.take_off_publisher.publish(Empty())
         rospy.sleep(3)
-        rospy.loginfo('[INFO] Take Off Done')
+        rospy.loginfo('Take Off Done')
 
     def land(self) -> None:
         """ Landing the drone """
-        rospy.loginfo('[INFO] Landing ...')
+        rospy.loginfo('Landing ...')
         # self.control_publisher.publish(Twist())
         # rospy.sleep(1)
         self.land_publisher.publish(Empty())
         rospy.sleep(3)
-        rospy.loginfo('[INFO] Landing Done')
+        rospy.loginfo('Landing Done')
         # rospy.on_shutdown(Navigation.shutdown())
         
     @staticmethod
@@ -213,6 +215,16 @@ class Navigation:
         q = waypoint.pose.orientation
         return tf.transformations.euler_from_quaternion((q.x, q.y, q.z, q.w))
 
+    @staticmethod
+    def deg2rad(degree: float) -> float:
+        """
+        Convert angle in degree to radian unit 
+        :param degree(float): The angle in degree unit
+        :return: the angle in radian
+        :rtype: float
+        """
+        return Navigation.yaw_norm(degree) * math.pi / 180.0
+
     def distance_from_2D(self, position: PoseStamped) -> float:
         """
         Calculate the L2 distance a position to this waypoint
@@ -224,7 +236,7 @@ class Navigation:
             (self.current_pose.pose.position.x - position.pose.position.x) ** 2 + 
             (self.current_pose.pose.position.y - position.pose.position.y) ** 2 )
 
-    def distance_from_3D(self, position: PoseStamped) -> float:
+    def distance_from(self, position: PoseStamped) -> float:
         """
         Calculate the L2 distance a position to this waypoint
         :param position (PoseStamped.pose.position): The position to be checked

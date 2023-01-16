@@ -46,13 +46,13 @@ class Publish_Threading(threading.Thread):
         i = 0
         while not rospy.is_shutdown() and self.publisher.get_num_connections() == 0:
             if i == 4:
-                rospy.loginfo('[INFO] Waiting for subscriber to connect to {}'.format(self.publisher.name))
+                rospy.loginfo('Waiting for subscriber to connect to {}'.format(self.publisher.name))
                 rospy.sleep(0.5)
                 i += 1
                 i %= 5
 
         if rospy.is_shutdown():
-            rospy.logerr('[ERROR] Got shutdown request before subscribers connected')
+            rospy.logerr('Got shutdown request before subscribers connected')
 
     def update(self, x:float, y:float, z:float, theta:float, speed:float) -> None:
         """
@@ -150,14 +150,16 @@ if __name__ == "__main__":
                 twist_msgs.angular.x, twist_msgs.angular.y, twist_msgs.angular.z = 0, 0, 0
 
                 if trigger_bindings[key] == -1: # + take off
+                    rospy.loginfo('Take off ...')
                     publisher_thread.publisher.publish(twist_msgs)
                     take_off_publisher.publish(empty_msgs)
 
                 elif trigger_bindings[key] == -2: # - land
+                    rospy.loginfo('Landing ...')
                     publisher_thread.publisher.publish(twist_msgs)
                     land_publisher.publish(empty_msgs)
                 else:
-                    rospy.logerr('[ERROR] Command error: No such trigger command')
+                    rospy.logerr('Command error: No such trigger command')
             
             else:
                 # Skip updating if key timeout and drone already stopped.
@@ -169,7 +171,7 @@ if __name__ == "__main__":
                     break
             
             publisher_thread.update(x, y, z, theta, speed)
-            rospy.loginfo('[INFO] x:{} y:{} z:{} theta:{}'.format(x, y, z, theta))
+            rospy.loginfo('x:{} y:{} z:{} theta:{}'.format(x, y, z, theta))
     
     except Exception as exception:
         rospy.logerr(exception)

@@ -9,13 +9,11 @@ class Path_Visualizer {
         ros::NodeHandle handle;
         ros::Publisher orb_path_publisher;
         ros::Publisher ekf_path_publisher;
-        ros::Publisher optiTrack_publisher;
 
         ros::Subscriber orb_pose_subscriber;
         ros::Subscriber ekf_pose_subscriber;
-        ros::Subscriber optiTrack_subscriber;
 
-        nav_msgs::Path orb_path, ekf_path, optiTrack_path;
+        nav_msgs::Path orb_path, ekf_path;
         geometry_msgs::PoseStamped orb_pose, ekf_pose;
 
     public:
@@ -29,7 +27,7 @@ class Path_Visualizer {
 
         void orb_pose_callback(const geometry_msgs::PoseStamped pose) {
             if(isnan(pose.pose.position.x)) {
-                ROS_WARN("[WARN] The pose is NAN.");
+                ROS_WARN("The pose is NAN.");
                 return;
             }
 
@@ -61,7 +59,7 @@ int main(int argc, char **argv) {
     ros::start();
 
     Path_Visualizer node;
-    ROS_INFO("[INFO] Path visualizer node initialized.");
+    ROS_INFO("Path visualizer node initialized.");
 
     ros::spin();
     ros::shutdown();
