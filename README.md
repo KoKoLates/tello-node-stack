@@ -1,7 +1,4 @@
 # Tello Node Stack
-The packages Stack is under construction.
+A package stack for tello driver and control.
 
-* Tello Node
-* Keyboard Teleop Node
-* Control Interface Node
 
