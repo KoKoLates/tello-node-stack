@@ -1,0 +1,10 @@
+numpy
+av==8.0.3
+opencv-python==4.5.4.60
+opencv-contrib-python==4.5.4.60
+tellopy==0.7.0
+smach==0.9.1
+sys==3.9.7
+select==1.1
+termios==0.4.2
+tty==1.0
