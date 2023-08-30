@@ -17,11 +17,12 @@
             <param name="connect_time_out" value="10.0" />
             <param name="h264_encoded_stream" value="true" />
             <param name="camera_calibration" value="$(arg camera_calibration)" />
+
             <!-- remap the camera_info topic for the orb_slam_2_ros node -->
             <remap from="/tello/camera_info" to="/camera/camera_info" />
         </node>
 
+        <!-- video streaming compress and uncompress -->
         <node pkg="image_transport" name="image_uncompressed" type="republish" args="h264 in:=/tello/image_raw raw out:=/camera/image_raw" />
-
     </group>
 </launch>

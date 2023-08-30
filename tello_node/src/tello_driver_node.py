@@ -92,27 +92,25 @@ class Tello_Node(tello.Tello):
     @staticmethod
     def cmd_success_notify(command:str, success:bool) -> None:
         """
-        Inform the user whether the command is executed or failed
-        :param command (str): The command to be executed expectly.
-        :param success (bool): The flag that record the execution is success or not. 
+        Inform of command execution success
+        @param command: The command to be executed expectly
+        @param success: The flag that record the execution is success or not
         """
-        if success:
-            rospy.loginfo('{} - executed.'.format(command))
-        else:
-            rospy.loginfo('{} - failed.'.format(command))
+        rospy.loginfo(f'{command} - executed.' if success else f'{command} - failed.')
 
     @staticmethod
     def loadCalibrationFile(filename: str, cname: str) -> CameraInfo:
         """ 
-        oad calibration data from a file.
-        This function returns a `sensor_msgs/CameraInfo`_ message, based
+        Load the camera calibrate weights from a file.
+        This function returns a `sensor_msgs/CameraInfo` message, based
         on the filename parameter.  An empty or non-existent file is `not`
         considered an error; a null CameraInfo being provided in that case.
 
-        :param filename: location of CameraInfo to read
-        :param cname: Camera name.
-        :returns: `sensor_msgs/CameraInfo`_ message containing calibration, if file readable; null calibration message otherwise.
-        :raises: :exc:`IOError` if an existing calibration file is unreadable.
+        @param filename: location of CameraInfo to read
+        @param cname: Camera name.
+        @returns: `sensor_msgs/CameraInfo`_ message containing calibration, if file readable; null calibration message otherwise.
+        @rtype: CameraInfo
+        @raises: :exc:`IOError` if an existing calibration file is unreadable.
         """
         camera_info = CameraInfo()
         try:
@@ -157,11 +155,11 @@ class Tello_Node(tello.Tello):
         if self.frame_thread is not None:
             self.frame_thread.join()
 
-    def flight_data_callback(self, event, sender, data, **args):
+    def flight_data_callback(self, event, sender, data, **args) -> None:
         """
         Callback function for flight data 
-        :param event: EVENT_FLIGHT_DATA
-        :param data: flight data
+        @param event: `EVENT_FLIGHT_DATA`
+        @param data: flight data
         """
         horizontal_speed = math.sqrt(math.pow(data.north_speed, 2) + math.pow(data.east_speed, 2)) / 10.0
         self.height = data.height / 10.0
@@ -185,12 +183,12 @@ class Tello_Node(tello.Tello):
         else:
             self.status_count += 1
 
-    def log_data_callback(self, event, sender, data, **args):
+    def log_data_callback(self, event, sender, data, **args) -> None:
         """
         Callback function for Odometry data that record in Tello
         This function is to transform the data into nav_msgs.msg of ROS
-        :param event: EVENT_LOG_DATA
-        :param data: Odometry data of position and velocity in three dimension
+        @param event: `EVENT_LOG_DATA`
+        @param data: Odometry data of position and velocity in three dimension
         """
         msg = Odometry()
         msg.header.frame_id = rospy.get_namespace() + 'local_origin'
@@ -215,11 +213,11 @@ class Tello_Node(tello.Tello):
         self.odom_publisher.publish(msg)
 
                 
-    def video_data_callback(self, event, sender, data, **args):
+    def video_data_callback(self, event, sender, data, **args) -> None:
         """ 
         Callback function for video data to parse it into compression datatype
-        :param event: EVENT_VIDEO_DATA
-        :param data: video data in byte list type
+        @param event: `EVENT_VIDEO_DATA`
+        @param data: video data in byte list type
         """
         # Parsing the packet
         seq_id, sub_id, packet = data[0], data[1], data[2:]
@@ -251,11 +249,11 @@ class Tello_Node(tello.Tello):
                 event = self.EVENT_VIDEO_FRAME_H264, 
                 data = (frame, self.seq_block_count * 256 + seq_id, self.frame_time))
     
-    def h264_video_frame_callback(self, event, sender, data, **args):
+    def h264_video_frame_callback(self, event, sender, data, **args) -> None:
         """
         Callback function for h264 video to publish corresponding topic
-        :param event: EVENT_VIDEO_FRAME_H264
-        :data: pre-process video data
+        @param event: `EVENT_VIDEO_FRAME_H264`
+        @data: pre-process video data
         """
         frame, seq_id, frame_secs = data
         pkt_msg = CompressedImage()
