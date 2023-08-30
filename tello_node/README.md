@@ -22,28 +22,3 @@ The `DJI TELLO` driver node on ROS noetic based on unofficial [TelloPy](https://
 * ```~/tello_driver_node/tello_ip```
 * ```~/tello_driver_node/initial_frame```
 * ```~/tello_driver_node/camera_calibration```
-
-## 2. Installaion
-`TODO`
-### ROS Distribution
-```shell
-$ sudo apt install 
-```
-
-
-### Build source
-```shell
-$ cd <CATKIN_WS/SRC>
-$ git clone --recursive path
-$ cd ..
-$ catkin_make
-$ source devel/setup.bash
-```
-
-## 3. Launch
-* Turn on Tello drone
-* Connect to drone's WiFi access point (`TELLO_XXXXXX`)
-```shell
-$ roslaunch tello_node tello_node.launch
-$ roslaunch tello_node tello_keyboard_teleop.launch
-```
