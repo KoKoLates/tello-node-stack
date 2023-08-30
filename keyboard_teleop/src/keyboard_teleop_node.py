@@ -57,11 +57,11 @@ class Publish_Threading(threading.Thread):
     def update(self, x:float, y:float, z:float, theta:float, speed:float) -> None:
         """
         Update the command value.
-        :param x (float): x linear velocity
-        :param y (float): y linear velocity
-        :param z (float): z linear velocity
-        :param theta (float): yaw angle velocity
-        :param speed (float): the scale of each velocity
+        @param x: x linear velocity
+        @param y: y linear velocity
+        @param z: z linear velocity
+        @param theta: yaw angle velocity
+        @param speed: the scale of each velocity
         """
         self.condition.acquire()
         self.x, self.y, self.z, self.theta, self.speed = x, y, z, theta, speed
@@ -100,8 +100,11 @@ class Publish_Threading(threading.Thread):
     @staticmethod
     def getKey(settings:list, timeout) -> str:
         """
-        :param setting (list): system setup
-        :param timeout (float): the time out duration
+        Capture key value from keyboard
+        @param setting: system setup
+        @param timeout: the time out duration
+        @return: key value in string format
+        @rtype: str
         """
         tty.setraw(sys.stdin.fileno())
         rlist, _, _ = select.select([sys.stdin], [], [], timeout)
