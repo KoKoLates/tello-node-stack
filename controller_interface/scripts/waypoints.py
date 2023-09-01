@@ -20,8 +20,8 @@ class WaypointsGenerator:
 
     def add_waypoint(self, pose: PoseStamped) -> None:
         """
-        Add the waypoints from /goal topic 
-        :param pose (PoseStamped): The waypoints position
+        Add the waypoints from goal topic 
+        @param pose: The waypoints position
         """
         self.waypoints.append(pose)
         self.path = interpolation.path_generator(self.waypoints, 0.05)

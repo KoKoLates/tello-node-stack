@@ -1,7 +1,6 @@
 <launch>
     <include file="$(find controller_interface)/launch/pid_controller.launch" />
     
-
     <node pkg="controller_interface" type="interface" name="control_interface" output="screen">
         <remap from="error_x" to="/pid_pitch/state" />
         <remap from="error_y" to="/pid_roll/state" />

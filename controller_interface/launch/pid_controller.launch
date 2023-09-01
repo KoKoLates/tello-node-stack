@@ -51,5 +51,4 @@
         <param name="angle_error" value="true" />
         <remap from="setpoint" to="/zero_setpoint" />
     </node>
-
 </launch>

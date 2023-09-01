@@ -7,11 +7,11 @@ from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, Pose, Vector3, Point, Quaternion
 
 class Interpolation:
-    def __init__(self, start: PoseStamped, end: PoseStamped, res) -> None:
+    def __init__(self, start: PoseStamped, end: PoseStamped, res: int | float) -> None:
         """
-        :param start (PoseStamped): Start point
-        :param end (PoseStamped): end point
-        :param res (int / float): distance resolution
+        @param start: Start point
+        @param end: end point
+        @param res: distance resolution
         """
         assert(isinstance(start, PoseStamped)), "The start point should be PoseStamped"
         assert(isinstance(end, PoseStamped)), "The end point should be PoseStamped"
@@ -35,17 +35,17 @@ class Interpolation:
     def __L2_Norm(self, vector: Vector3) -> float:
         """
         L2 normalization the given vector.
-        :param vector (Vector3): The given vector
-        :return: The L2 norm of the vector
-        :rtype: float
+        @param vector: The given vector
+        @return: The L2 norm of the vector
+        @rtype: float
         """
         assert(isinstance(vector, Vector3)), "The given vector should be Vector3 type."
         return math.sqrt(vector.x ** 2 + vector.y ** 2 + vector.z ** 2)
 
     def __getDisplacementVector(self) -> Vector3:
         """
-        :return: Vector between start and end point
-        :rtype: geometry_msgs.msgs.Vector3
+        @return: Vector between start and end point
+        @rtype: geometry_msgs.msgs.Vector3
         """
         vector = Vector3()
         vector.x = self.end.pose.position.x - self.start.pose.position.x
@@ -55,8 +55,8 @@ class Interpolation:
 
     def __getDirectionVector(self) -> Vector3:
         """
-        :return: the direction vector between start and end point
-        :rtype: geometry_msgs.msgs.Vector3
+        @return: the direction vector between start and end point
+        @rtype: geometry_msgs.msgs.Vector3
         """
         vector = copy.deepcopy(self.disp_vector)
         magnitude = self.__L2_Norm(vector)
@@ -65,12 +65,12 @@ class Interpolation:
         vector.z /= magnitude
         return vector
 
-    def __getEulerAngle(self, waypoint: PoseStamped) -> list:
+    def __getEulerAngle(self, waypoint: PoseStamped) -> list[float]:
         """
         Get the euler angle that transform from quaternion.
-        :param waypoint (PoseStamped): THe point to be transformed
-        :return: the list of euler angle
-        :rtype: list[float]
+        @param waypoint: THe point to be transformed
+        @return: the list of euler angle
+        @rtype: list[float]
         """
         assert(isinstance(waypoint, PoseStamped)), "waypoints should be PoseStamped."
         q = waypoint.pose.orientation
@@ -124,9 +124,9 @@ class Interpolation:
     def yaw_norm(radius: float) -> float:
         """
         Normalize the radius of yaw angle
-        :param radius (float): The yaw angle in raduis unit
-        :return: The normalized yaw angle
-        :rtype: float
+        @param radius: The yaw angle in raduis unit
+        @return: The normalized yaw angle
+        @rtype: float
         """
         while(radius > math.pi):
             radius -= math.pi * 2
@@ -135,13 +135,13 @@ class Interpolation:
         return radius
 
 
-def path_generator(waypoints: list, res) -> Path:
+def path_generator(waypoints: list, res: int | float) -> Path:
     """
     Generate the path.
-    :param waypoints (list): The list of waypoints
-    :param res (int / float): distance resolution
-    :return: path for waypoints
-    :rtype: Path
+    @param waypoints: The list of waypoints
+    @param res: distance resolution
+    @return: path for waypoints
+    @rtype: Path
     """
     assert(isinstance(waypoints, list) and isinstance(waypoints[0], PoseStamped)), "waypoints should be list of PoseStamped."
     assert(len(waypoints) > 1), "The length of waypoints should be more than one."
