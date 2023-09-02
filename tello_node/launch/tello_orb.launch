@@ -5,7 +5,7 @@
     <arg name="tello_cmd_server_port" default="8889" />
     <arg name="local_cmd_client_port" default="8890" />
     <arg name="local_vid_server_port" default="6038" />
-    <arg name="camera_calibration" default="$(find tello_node)/config/960x720.yaml" />
+    <arg name="camera_calibration" default="$(find tello_node)/cfg/960x720.yaml" />
 
     <group ns="$(arg namespace)">
         <node pkg="tello_node" type="tello_driver_node.py" name="tello_driver_node" output="screen">
