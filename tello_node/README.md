@@ -43,6 +43,6 @@ Installation on Ubuntu 16.04 requires **ffmpeg** of at least version 3 <Br>
 `$ sudo add-apt-repository ppa:jonathonf/ffmpeg-3` <br>
 `$ sudo apt update && sudo apt install ffmpeg`
 
-* ORB SLAM2 launch
+* ORB SLAM2 launch <br>
 Tello node could launch the ORB SLAM2 processing node directly to enable localization and mapping algorithm. <Br>
 `$ roslaunch tello_node tello_orb.launch`
