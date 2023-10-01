@@ -1,7 +1,13 @@
 # Tello Node
 
 ## 1. Overview
-A driver node for communicating with dji tello drone using official [software develop kit](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf) and other unofficial [package library](https://github.com/hanyazou/TelloPy). The unofficial libraries originated from the reverse-engineering the raw packages broadcasted by the Tello. This ROS package is build on top of the unofficial library.
+A driver node for communicating with dji tello drone using official [software develop kit](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf) and other unofficial [package library](https://github.com/hanyazou/TelloPy). The unofficial libraries originated from the reverse-engineering the raw packages broadcasted by the Tello. This package is build on top of the unofficial library and mainly for ROS noetic version.
+
+### Build
+* `$ cd catkin_ws/src`
+* `& git clone https://github.com/KoKoLates/tello-node-stack.git`
+* `$ $ cd .. & catkin_make`
+* `$ source devel/setup.bash`
 
 ### Launch
 * Turn on tello drone.
@@ -37,12 +43,14 @@ A driver node for communicating with dji tello drone using official [software de
 
 ## 3. Feature
 
-* Raw video streaming <br>
-Depend on [pyav](https://github.com/PyAV-Org/PyAV) package. `$ pip install av --user` <br>
-Installation on Ubuntu 16.04 requires **ffmpeg** of at least version 3 <Br>
-`$ sudo add-apt-repository ppa:jonathonf/ffmpeg-3` <br>
-`$ sudo apt update && sudo apt install ffmpeg`
+### Video streaming
+A raw video streaming could be used in this package stack depends on the [pyav](https://github.com/PyAV-Org/PyAV) package library. 
+* `$ pip install av --user`
 
-* ORB SLAM2 launch <br>
-Tello node could launch the ORB SLAM2 processing node directly to enable localization and mapping algorithm. <Br>
-`$ roslaunch tello_node tello_orb.launch`
+Note that installation based on Ubuntu 16.04 requires **ffmpeg** of at least version 3
+* `$ sudo add-apt-repository ppa:jonathonf/ffmpeg-3`
+* `$ sudo apt update && sudo apt install ffmpeg`
+
+### ORB SLAM2 launch 
+The drone driver could also launch the ORB SLAM2 processing node as well. By processing the video stream from tello drone to the visual SLAM algorithms. It could directly enable localization and mapping.
+* `$ roslaunch tello_node tello_orb.launch`
