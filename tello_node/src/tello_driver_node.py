@@ -17,18 +17,18 @@ class Tello_Node(tello.Tello):
     def __init__(self) -> None:
         super(Tello_Node, self).__init__(port=9000)
         """ Parameter Servers """
-        self.tellop_IP = rospy.get_param('~tello_ip', '192.168.10.1')
-        self.tello_cmd_server_port = int(rospy.get_param('~tello_cmd_server_port', 8889))
-        self.local_cmd_client_port = int(rospy.get_param('~local_cmd_client_port', 8890))
-        self.local_vid_server_port = int(rospy.get_param('~local_vid_server_port', 6038))
+        self.tellop_IP: str = rospy.get_param('~tello_ip', '192.168.10.1')
+        self.tello_cmd_server_port: int = int(rospy.get_param('~tello_cmd_server_port', 8889))
+        self.local_cmd_client_port: int = int(rospy.get_param('~local_cmd_client_port', 8890))
+        self.local_vid_server_port: int = int(rospy.get_param('~local_vid_server_port', 6038))
 
         self.initial_frame = int(rospy.get_param('~initial_frame', 100))
-        self.connect_time_out =rospy.get_param('~connect_time_out', 10.0)
+        self.connect_time_out = rospy.get_param('~connect_time_out', 10.0)
         self.calibration_path = rospy.get_param('~camera_calibration', '')
         self.h264_encoded_stream = bool(rospy.get_param('~h264_encoded_stream', False))
 
         """ Connected to the drone """
-        rospy.loginfo('Connecting to drone @ {}...'.format(self.tello_addr))
+        rospy.loginfo(f'Connecting to drone @ {self.tello_addr} ...')
         self.connect()
         try:
             self.wait_for_connection(timeout=self.connect_time_out)
@@ -37,6 +37,7 @@ class Tello_Node(tello.Tello):
             rospy.signal_shutdown(str(err))
             self.quit()
             return
+
         rospy.loginfo('Tello drone connection done.')
         rospy.on_shutdown(self.shutdown_callback)
 
@@ -46,6 +47,8 @@ class Tello_Node(tello.Tello):
         self.status_publisher = rospy.Publisher('status', tello_status, queue_size=1, latch=True)
         # Image publisher
         if self.h264_encoded_stream:
+            ## if the h264 compressed image is enable, the image will published in h624 compressed format
+            ## else the raw images capture from the drone will published directly
             self.image_publisher_h264 = rospy.Publisher('image_raw/h264', CompressedImage, queue_size=10)
         else:
             self.image_publisher_raw = rospy.Publisher('camera/image_raw', Image, queue_size=10)
@@ -55,6 +58,7 @@ class Tello_Node(tello.Tello):
         self.camera_info.header.frame_id = rospy.get_namespace() + 'camera_front'
         self.camera_info_publisher = rospy.Publisher('/tello/camera_info', CameraInfo, queue_size=1, latch=True)
         self.camera_info_publisher.publish(self.camera_info)
+
 
         """ Subscribe Topics"""
         rospy.Subscriber('take_off', Empty, self.take_off_callback, queue_size=1)
@@ -85,7 +89,6 @@ class Tello_Node(tello.Tello):
         # Reconstruction H264 video frames
         self.prev_seq_id = None
         self.seq_block_count = 0
-
         
         rospy.loginfo('The Tello driver node is ready')
 
@@ -134,6 +137,7 @@ class Tello_Node(tello.Tello):
 
         return camera_info
 
+
     """ Callback functions """
     def cmd_vel_callback(self, msg:Twist) -> None:
         self.set_pitch(msg.linear.x)
@@ -177,8 +181,8 @@ class Tello_Node(tello.Tello):
         )
         self.status_publisher.publish(msg)
 
-        if self.status_count == 100:
-            rospy.loginfo('Battery Percentage: {}%.' .format(data.battery_percentage))
+        if self.status_count in (50):
+            rospy.loginfo(f'Battery Percentage: {data.bettery_percentage}%.')
             self.status_count = 0
         else:
             self.status_count += 1
@@ -211,7 +215,6 @@ class Tello_Node(tello.Tello):
         msg.twist.twist.angular.y = data.imu.gyro_y
         msg.twist.twist.angular.z = data.imu.gyro_z
         self.odom_publisher.publish(msg)
-
                 
     def video_data_callback(self, event, sender, data, **args) -> None:
         """ 
@@ -308,4 +311,3 @@ if __name__ == '__main__':
     drone = Tello_Node()
     if drone.state != drone.STATE_QUIT:
         rospy.spin()
-
