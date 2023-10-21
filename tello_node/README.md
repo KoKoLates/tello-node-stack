@@ -6,7 +6,7 @@ A driver node for communicating with dji tello drone using official [software de
 ### Build
 * `$ cd catkin_ws/src`
 * `& git clone https://github.com/KoKoLates/tello-node-stack.git`
-* `$ $ cd .. & catkin_make`
+* `$ cd .. & catkin_make`
 * `$ source devel/setup.bash`
 
 ### Launch
