@@ -27,13 +27,11 @@ A High level waypoint tracking controller implemented based on ROS noetic. The m
 ### Services
 * `/set_reference`
 ### Parameters
+The hyper-parameters mainly for PID controller, include **upper limit**, **lower limit** and **windup limit** thresholds; maxmimum and minimum loop frequency.
 * `~/pid_pitch/..`
 * `~/pid_roll/..`
 * `~/pid_yaw/..`
 * `~/pid_thrust/..`
-* `Kp`、`Ki`、 `Kd` 
-* `upper_limit` 、 `lower_limit` 、 `windup_limit`
-* `max_loop_frequency` 、 `min_loop_frequency`
 
 ## 3. Node - Navigation
 ### Publish topics
@@ -62,5 +60,5 @@ A High level waypoint tracking controller implemented based on ROS noetic. The m
 
 ## 5. Features
 ### Cooperate with ORB SLAM2 node
-ORB SLAM2 node could help the drone localize in the pose and position. Through the difference between `current pose` and `target pose`, the controller could obtain the pose error and give the feedback to operating the drone behavior.
+ORB SLAM2 node could help the drone localize in the pose and position. Through the difference between `current pose` and `target pose`, the controller could obtain the pose error and give the feedback to operating the drone behavior.s
 * `$ roslaunch orb_slam2_ros tello.launch`
